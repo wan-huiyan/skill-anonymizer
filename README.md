@@ -91,7 +91,7 @@ mkdir -p .cursor/rules
 ## Related Skills
 
 - [data-provenance-verifier](https://github.com/wan-huiyan/data-provenance-verifier) — Verify data files are genuine before publishing
-- [publish-skill](https://github.com/anthropics/claude-code) — Publish skills to GitHub (runs anonymizer as a pre-step)
+- [publish-skill](https://github.com/wan-huiyan/publish-skill) — Publish skills to GitHub (runs anonymizer as a pre-step)
 
 ## Version History
 
