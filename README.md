@@ -1,4 +1,5 @@
 # Skill Anonymizer
+[![GitHub release](https://img.shields.io/github/v/release/wan-huiyan/skill-anonymizer)](https://github.com/wan-huiyan/skill-anonymizer/releases) [![Claude Code](https://img.shields.io/badge/Claude_Code-skill-orange)](https://claude.com/claude-code) [![license](https://img.shields.io/github/license/wan-huiyan/skill-anonymizer)](LICENSE) [![last commit](https://img.shields.io/github/last-commit/wan-huiyan/skill-anonymizer)](https://github.com/wan-huiyan/skill-anonymizer/commits)
 
 Scan Claude Code skills for client-specific data and anonymize them for safe public sharing. Handles current file content and git history cleaning via `git-filter-repo`.
 
