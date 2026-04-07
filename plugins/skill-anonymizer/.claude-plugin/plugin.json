@@ -1,9 +1,16 @@
 {
   "name": "skill-anonymizer",
   "description": "Scan Claude Code skills for client-specific data and anonymize them for safe public sharing.",
-  "version": "1.0.0",
-  "author": { "name": "Huiyan Wan" },
+  "version": "1.1.0",
+  "author": {
+    "name": "Huiyan Wan"
+  },
   "repository": "https://github.com/wan-huiyan/skill-anonymizer",
   "license": "MIT",
-  "keywords": ["anonymization", "data-privacy", "skill-publishing", "client-safety"]
+  "keywords": [
+    "anonymization",
+    "data-privacy",
+    "skill-publishing",
+    "client-safety"
+  ]
 }
