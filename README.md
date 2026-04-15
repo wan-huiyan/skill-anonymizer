@@ -32,15 +32,26 @@ Total: 12 direct, 8 quasi, 2 contextual
 
 ## Installation
 
-**Claude Code:**
+**Claude Code (plugin install — recommended):**
+```bash
+# Add the marketplace, then install the plugin
+claude plugin marketplace add wan-huiyan/skill-anonymizer
+claude plugin install skill-anonymizer@wan-huiyan-skill-anonymizer
+```
+
+**Claude Code (git clone):**
 ```bash
 git clone https://github.com/wan-huiyan/skill-anonymizer.git ~/.claude/skills/skill-anonymizer
 ```
 
-**Cursor (2.4+):**
+**Cursor** (2.4+):
 ```bash
+# Per-project rule (most reliable)
 mkdir -p .cursor/rules
-# Copy SKILL.md content into .cursor/rules/skill-anonymizer.mdc with alwaysApply: true
+# Copy plugins/skill-anonymizer/SKILL.md content into .cursor/rules/skill-anonymizer.mdc with alwaysApply: true
+
+# Or via npx skills CLI
+npx skills add wan-huiyan/skill-anonymizer --global
 ```
 
 ## What You Get
