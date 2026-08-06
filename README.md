@@ -108,6 +108,8 @@ npx skills add wan-huiyan/skill-anonymizer --global
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.3.0 | 2026-08-06 | Fixed the scanner lookup for plugin installs. SKILL.md invoked `scripts/leak_scan.sh` through a single hardcoded `~/.claude/skills/skill-anonymizer/` path, which does not exist when the skill is installed as a plugin, so the audit silently never ran. All three call sites now resolve across `$CLAUDE_PLUGIN_ROOT`, `~/.claude/skills/`, and the plugin cache, and report "not found - tried [the paths]" on a miss. The pre-push hook now fails closed. |
+| 1.2.0 | 2026-06-17 | Whole-repo leak audit: bundled `scripts/leak_scan.sh` (format-string currency, symbol-stripped raw figures, git history + tags + stale branches + GitHub release archives), semantic name-scan guidance, and a pre-push gate. |
 | 1.0.0 | 2026-03-31 | Initial release. Three-category scan, replacement rules, git-filter-repo workflow. Tested with planted client data and history cleaning scenarios. |
 
 ## License

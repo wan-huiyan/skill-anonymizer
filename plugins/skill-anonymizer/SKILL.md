@@ -16,7 +16,7 @@ description: |
   git history + tags + stale branches + GitHub release source-archives — and can be wired as a
   pre-push hook so a leak is blocked before it leaves the machine.
 author: Claude Code
-version: 1.2.0
+version: 1.3.0
 date: 2026-06-17
 ---
 
@@ -81,12 +81,35 @@ A naive `grep '£[0-9]' SKILL.md` is the audit that let a real leak ship publicl
 - **Wrong file scope.** The leak is rarely only in `SKILL.md` — it's in `README.md`, `docs/`,
   `references/`, demo HTML, and code templates. Scan the **whole repo** (and skip binary files: `-I`).
 
-The bundled scanner encodes all three plus the history / refs / release checks (Step 4a/5):
+The bundled scanner encodes all three plus the history / refs / release checks (Step 4a/5).
+
+**Resolve the scanner's path before invoking it.** A plugin install puts it under
+`~/.claude/plugins/cache/<marketplace>/skill-anonymizer/<version>/scripts/`, NOT under
+`~/.claude/skills/`, so a single hardcoded `~/.claude/skills/...` path silently misses. Check all
+three roots (this same block is reused in Step 5 and in the pre-push hook below):
+
 ```bash
-~/.claude/skills/skill-anonymizer/scripts/leak_scan.sh <repo> \
-  -t known_terms.txt -n "250000 175000 90000" --remote owner/repo
-# exit non-zero = candidate leaks. Still grep-class — pair with the semantic name scan below.
+# Resolve across all three install roots. A plugin install creates neither of the first two.
+S="${CLAUDE_PLUGIN_ROOT:+${CLAUDE_PLUGIN_ROOT}/scripts/leak_scan.sh}"
+[ -f "$S" ] || S="$HOME/.claude/skills/skill-anonymizer/scripts/leak_scan.sh"
+[ -f "$S" ] || S="$(find -L "$HOME/.claude/plugins/cache" -mindepth 5 -maxdepth 5 \
+    -path '*/skill-anonymizer/*/scripts/leak_scan.sh' 2>/dev/null \
+  | awk -F/ '{print $(NF-2)"\t"$0}' | sort -V -k1,1 | tail -1 | cut -f2-)"
+
+if [ -f "$S" ]; then
+  bash "$S" <repo> -t known_terms.txt -n "250000 175000 90000" --remote owner/repo
+  # exit non-zero = candidate leaks. Still grep-class — pair with the semantic name scan below.
+else
+  echo "leak_scan.sh: not found - tried \$CLAUDE_PLUGIN_ROOT/scripts/, ~/.claude/skills/skill-anonymizer/scripts/, and the plugin cache"
+fi
 ```
+
+Two details in that resolver are load-bearing, each from a real defect: the `awk` ranks on the
+**version** segment alone (a plain `sort -V` over whole paths ranks by marketplace name, letting
+`aaa-mkt/2.5.0` lose to `zzz-mkt/1.0.0`), and it uses `find` rather than a shell glob (zsh's
+`nomatch` fails a non-matching glob at expansion time, before `2>/dev/null` can apply). Report a
+failed lookup as "not found - tried [the paths]", never a bare "not installed" — a failed lookup
+is not evidence about install state.
 
 ### A known-term grep is necessary, NOT sufficient — add a semantic scan
 
@@ -274,8 +297,21 @@ re-clone (+ a digits-too grep) caught them. Run the bundled scanner on the fresh
 list, and confirm history is clean too:
 ```bash
 git clone <repo-url> /tmp/verify-clean
-~/.claude/skills/skill-anonymizer/scripts/leak_scan.sh /tmp/verify-clean \
-  -t known_terms.txt -n "250000 175000 90000" --remote owner/repo   # exit 0 required
+
+# Resolve across all three install roots. A plugin install creates neither of the first two.
+S="${CLAUDE_PLUGIN_ROOT:+${CLAUDE_PLUGIN_ROOT}/scripts/leak_scan.sh}"
+[ -f "$S" ] || S="$HOME/.claude/skills/skill-anonymizer/scripts/leak_scan.sh"
+[ -f "$S" ] || S="$(find -L "$HOME/.claude/plugins/cache" -mindepth 5 -maxdepth 5 \
+    -path '*/skill-anonymizer/*/scripts/leak_scan.sh' 2>/dev/null \
+  | awk -F/ '{print $(NF-2)"\t"$0}' | sort -V -k1,1 | tail -1 | cut -f2-)"
+
+if [ -f "$S" ]; then
+  bash "$S" /tmp/verify-clean \
+    -t known_terms.txt -n "250000 175000 90000" --remote owner/repo   # exit 0 required
+else
+  echo "leak_scan.sh: not found - tried \$CLAUDE_PLUGIN_ROOT/scripts/, ~/.claude/skills/skill-anonymizer/scripts/, and the plugin cache"
+  echo "The scan did NOT run — do not record this repo as verified clean."
+fi
 ```
 
 After force-pushing history (Step 4), also confirm a single file via the API:
@@ -298,8 +334,20 @@ carrying a known client term/figure is blocked before it leaves the machine:
 ```bash
 # .git/hooks/pre-push  (chmod +x) — or point core.hooksPath at a shared hooks dir for all repos
 #!/usr/bin/env bash
-~/.claude/skills/skill-anonymizer/scripts/leak_scan.sh . \
-  -t .leakterms.txt -n "$(cat .leakfigs 2>/dev/null)" \
+# Resolve across all three install roots. A plugin install creates neither of the first two.
+S="${CLAUDE_PLUGIN_ROOT:+${CLAUDE_PLUGIN_ROOT}/scripts/leak_scan.sh}"
+[ -f "$S" ] || S="$HOME/.claude/skills/skill-anonymizer/scripts/leak_scan.sh"
+[ -f "$S" ] || S="$(find -L "$HOME/.claude/plugins/cache" -mindepth 5 -maxdepth 5 \
+    -path '*/skill-anonymizer/*/scripts/leak_scan.sh' 2>/dev/null \
+  | awk -F/ '{print $(NF-2)"\t"$0}' | sort -V -k1,1 | tail -1 | cut -f2-)"
+
+# Fail CLOSED: a hook that can't find its scanner must block the push, not wave it through.
+if [ ! -f "$S" ]; then
+  echo "pre-push BLOCKED: leak_scan.sh not found - tried \$CLAUDE_PLUGIN_ROOT/scripts/, ~/.claude/skills/skill-anonymizer/scripts/, and the plugin cache"
+  exit 1
+fi
+
+bash "$S" . -t .leakterms.txt -n "$(cat .leakfigs 2>/dev/null)" \
   || { echo "pre-push BLOCKED: candidate client-data leak (see above)."; exit 1; }
 ```
 
